@@ -1,0 +1,1 @@
+# Download NotoSans fonts from https://fonts.google.com/specimen/Noto+Sans
