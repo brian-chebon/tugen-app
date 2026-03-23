@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
 
 import '../../../../core/audio/audio_service.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/database/daos/progress_dao.dart';
 import '../../../../core/database/daos/stories_dao.dart';
 import '../../../../core/database/database_provider.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../providers/stories_providers.dart';
 
 class StoryPlayerScreen extends ConsumerStatefulWidget {
@@ -19,6 +22,8 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
   Story? _story;
   bool _showTranslation = true;
   double _speed = 1.0;
+  bool _completionTracked = false;
+  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -37,6 +42,43 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
         story.audioPath ?? '',
         remoteUrl: story.audioUrl,
       );
+
+      // Listen for completion
+      audioService.player.playerStateStream.listen((state) {
+        if (state.processingState == ProcessingState.completed &&
+            !_completionTracked) {
+          _completionTracked = true;
+          ProgressDao(ref.read(databaseProvider)).incrementStoriesCompleted();
+        }
+      });
+    }
+  }
+
+  Future<void> _downloadStory() async {
+    if (_story == null || _story!.audioUrl == null) return;
+    setState(() => _isDownloading = true);
+
+    try {
+      final audioService = ref.read(audioServiceProvider);
+      final localPath = await audioService.downloadAudio(
+        _story!.audioUrl!,
+        'story_${_story!.id}.aac',
+      );
+
+      final dao = StoriesDao(ref.read(databaseProvider));
+      await dao.markDownloaded(_story!.id, localPath);
+
+      // Refresh story state
+      final updated = await dao.getStory(widget.storyId);
+      if (mounted) setState(() => _story = updated);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
     }
   }
 
@@ -45,6 +87,7 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
     final theme = Theme.of(context);
     final audioService = ref.watch(audioServiceProvider);
     final segments = ref.watch(storySegmentsProvider(widget.storyId));
+    final l10n = AppLocalizations.of(context);
 
     if (_story == null) {
       return Scaffold(
@@ -60,10 +103,10 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
           // Toggle translation
           IconButton(
             icon: Icon(
-              _showTranslation ? Icons.translate : Icons.translate,
+              Icons.translate,
               color: _showTranslation ? theme.colorScheme.primary : null,
             ),
-            tooltip: 'Toggle translation',
+            tooltip: l10n.toggleTranslation,
             onPressed: () =>
                 setState(() => _showTranslation = !_showTranslation),
           ),
@@ -118,7 +161,8 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
                                       ? FontWeight.w600
                                       : FontWeight.w400,
                                   color: isActive
-                                      ? theme.colorScheme.onPrimaryContainer
+                                      ? theme
+                                          .colorScheme.onPrimaryContainer
                                       : theme.colorScheme.onSurface,
                                 ),
                               ),
@@ -174,10 +218,13 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
                             trackHeight: 4,
                             thumbShape: const RoundSliderThumbShape(
                                 enabledThumbRadius: 6),
-                            overlayShape: const RoundSliderOverlayShape(
-                                overlayRadius: 14),
-                            activeTrackColor: theme.colorScheme.primary,
-                            inactiveTrackColor: theme.colorScheme.outlineVariant,
+                            overlayShape:
+                                const RoundSliderOverlayShape(
+                                    overlayRadius: 14),
+                            activeTrackColor:
+                                theme.colorScheme.primary,
+                            inactiveTrackColor:
+                                theme.colorScheme.outlineVariant,
                             thumbColor: theme.colorScheme.primary,
                           ),
                           child: Slider(
@@ -185,13 +232,15 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
                             onChanged: (v) {
                               final seekPos = Duration(
                                   milliseconds:
-                                      (v * dur.inMilliseconds).round());
+                                      (v * dur.inMilliseconds)
+                                          .round());
                               audioService.seek(seekPos);
                             },
                           ),
                         ),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
                           children: [
                             Text(_formatDuration(pos),
                                 style: theme.textTheme.bodySmall),
@@ -229,7 +278,9 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
                         final newPos = audioService.position -
                             const Duration(seconds: 10);
                         audioService.seek(
-                            newPos < Duration.zero ? Duration.zero : newPos);
+                            newPos < Duration.zero
+                                ? Duration.zero
+                                : newPos);
                       },
                     ),
 
@@ -247,7 +298,9 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
                             }
                           },
                           child: Icon(
-                            playing ? Icons.pause : Icons.play_arrow,
+                            playing
+                                ? Icons.pause
+                                : Icons.play_arrow,
                           ),
                         );
                       },
@@ -265,18 +318,27 @@ class _StoryPlayerScreenState extends ConsumerState<StoryPlayerScreen> {
                     ),
 
                     // Download
-                    IconButton(
-                      icon: Icon(
-                        _story!.isDownloaded
-                            ? Icons.download_done
-                            : Icons.download,
-                      ),
-                      onPressed: _story!.isDownloaded
-                          ? null
-                          : () {
-                              // Trigger download
-                            },
-                    ),
+                    _isDownloading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2),
+                          )
+                        : IconButton(
+                            icon: Icon(
+                              _story!.isDownloaded
+                                  ? Icons.download_done
+                                  : Icons.download,
+                            ),
+                            tooltip: _story!.isDownloaded
+                                ? l10n.downloaded
+                                : l10n.downloadForOffline,
+                            onPressed:
+                                _story!.isDownloaded
+                                    ? null
+                                    : _downloadStory,
+                          ),
                   ],
                 ),
               ],

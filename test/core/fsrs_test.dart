@@ -76,8 +76,8 @@ void main() {
       const xpPerCorrect = 10;
       const bonusPerfect = 20;
 
-      final score = correctAnswers / totalQuestions;
-      final xp = correctAnswers * xpPerCorrect +
+      const score = correctAnswers / totalQuestions;
+      const xp = correctAnswers * xpPerCorrect +
           (score == 1.0 ? bonusPerfect : 0);
 
       expect(score, 0.7);
@@ -90,8 +90,8 @@ void main() {
       const xpPerCorrect = 10;
       const bonusPerfect = 20;
 
-      final score = correctAnswers / totalQuestions;
-      final xp = correctAnswers * xpPerCorrect +
+      const score = correctAnswers / totalQuestions;
+      const xp = correctAnswers * xpPerCorrect +
           (score == 1.0 ? bonusPerfect : 0);
 
       expect(score, 1.0);

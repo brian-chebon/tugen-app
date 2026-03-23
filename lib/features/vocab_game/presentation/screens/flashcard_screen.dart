@@ -4,6 +4,9 @@ import 'package:fsrs/fsrs.dart' as fsrs;
 
 import '../../../../core/audio/audio_service.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/database/daos/progress_dao.dart';
+import '../../../../core/database/database_provider.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../domain/usecases/review_service.dart';
 import '../providers/vocab_providers.dart';
 
@@ -50,6 +53,12 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
     final reviewService = ref.read(reviewServiceProvider);
     await reviewService.reviewCard(card.id, 'vocab', rating);
 
+    // Deduct heart on "Again"
+    if (rating == fsrs.Rating.again) {
+      final dao = ProgressDao(ref.read(databaseProvider));
+      await dao.useHeart();
+    }
+
     setState(() {
       _isFlipped = false;
       _currentIndex++;
@@ -60,26 +69,29 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final audioService = ref.watch(audioServiceProvider);
+    final l10n = AppLocalizations.of(context);
 
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Flashcards')),
+        appBar: AppBar(title: Text(l10n.flashcards)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_cards.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Flashcards')),
-        body: const Center(
+        appBar: AppBar(title: Text(l10n.flashcards)),
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
-              SizedBox(height: 16),
-              Text('All caught up!', style: TextStyle(fontSize: 20)),
-              SizedBox(height: 8),
-              Text('No cards due for review.'),
+              const Icon(Icons.check_circle_outline,
+                  size: 64, color: Colors.green),
+              const SizedBox(height: 16),
+              Text(l10n.allCaughtUp,
+                  style: const TextStyle(fontSize: 20)),
+              const SizedBox(height: 8),
+              Text(l10n.noCardsDue),
             ],
           ),
         ),
@@ -88,7 +100,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
 
     if (_currentIndex >= _cards.length) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Complete!')),
+        appBar: AppBar(title: Text(l10n.done)),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -96,15 +108,15 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
               const Icon(Icons.celebration, size: 64, color: Colors.amber),
               const SizedBox(height: 16),
               Text(
-                'Session Complete!',
+                l10n.sessionComplete,
                 style: theme.textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
-              Text('Reviewed ${_cards.length} cards'),
+              Text(l10n.translate('reviewedCards').replaceAll('{count}', '${_cards.length}')),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Done'),
+                child: Text(l10n.done),
               ),
             ],
           ),
@@ -166,7 +178,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Tap to reveal',
+                            l10n.tapToReveal,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -204,25 +216,25 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
               Row(
                 children: [
                   _RatingButton(
-                    label: 'Again',
+                    label: l10n.again,
                     color: Colors.red,
                     onTap: () => _onRate(fsrs.Rating.again),
                   ),
                   const SizedBox(width: 8),
                   _RatingButton(
-                    label: 'Hard',
+                    label: l10n.hard,
                     color: Colors.orange,
                     onTap: () => _onRate(fsrs.Rating.hard),
                   ),
                   const SizedBox(width: 8),
                   _RatingButton(
-                    label: 'Good',
+                    label: l10n.good,
                     color: Colors.green,
                     onTap: () => _onRate(fsrs.Rating.good),
                   ),
                   const SizedBox(width: 8),
                   _RatingButton(
-                    label: 'Easy',
+                    label: l10n.easy,
                     color: Colors.blue,
                     onTap: () => _onRate(fsrs.Rating.easy),
                   ),

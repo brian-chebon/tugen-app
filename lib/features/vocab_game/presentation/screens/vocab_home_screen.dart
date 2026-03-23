@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../providers/vocab_providers.dart';
 
@@ -14,9 +15,10 @@ class VocabHomeScreen extends ConsumerWidget {
     final decks = ref.watch(decksProvider);
     final dueCount = ref.watch(dueCountProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Learn')),
+      appBar: AppBar(title: Text(l10n.vocabGame)),
       body: CustomScrollView(
         slivers: [
           // Stats header
@@ -49,7 +51,7 @@ class VocabHomeScreen extends ConsumerWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              '$count cards due for review',
+                              '$count ${l10n.cardsDueForReview}',
                               style: const TextStyle(
                                   fontWeight: FontWeight.w600),
                             ),
@@ -57,7 +59,7 @@ class VocabHomeScreen extends ConsumerWidget {
                           FilledButton(
                             onPressed: () =>
                                 context.go('/vocab/flashcards/due'),
-                            child: const Text('Review'),
+                            child: Text(l10n.review),
                           ),
                         ],
                       ),
@@ -69,12 +71,13 @@ class VocabHomeScreen extends ConsumerWidget {
           ),
 
           // Section header
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'Vocabulary Decks',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                l10n.vocabularyDecks,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -86,17 +89,19 @@ class VocabHomeScreen extends ConsumerWidget {
                 (context, index) {
                   final deck = deckList[index];
                   return Card(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 6),
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(16),
-                      leading: Text(deck.icon, style: const TextStyle(fontSize: 32)),
+                      leading: Text(deck.icon,
+                          style: const TextStyle(fontSize: 32)),
                       title: Text(
                         deck.nameEn,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style:
+                            const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text(
-                        '${deck.totalCards} cards • ${deck.nameTug}',
+                        '${deck.totalCards} ${l10n.cardsLabel} \u2022 ${deck.nameTug}',
                       ),
                       trailing: PopupMenuButton<String>(
                         onSelected: (v) {
@@ -107,23 +112,23 @@ class VocabHomeScreen extends ConsumerWidget {
                           }
                         },
                         itemBuilder: (_) => [
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'flashcards',
                             child: Row(
                               children: [
-                                Icon(Icons.style),
-                                SizedBox(width: 8),
-                                Text('Flashcards'),
+                                const Icon(Icons.style),
+                                const SizedBox(width: 8),
+                                Text(l10n.flashcards),
                               ],
                             ),
                           ),
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'quiz',
                             child: Row(
                               children: [
-                                Icon(Icons.quiz),
-                                SizedBox(width: 8),
-                                Text('Quiz'),
+                                const Icon(Icons.quiz),
+                                const SizedBox(width: 8),
+                                Text(l10n.quiz),
                               ],
                             ),
                           ),
@@ -156,6 +161,8 @@ class _StatsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
@@ -174,25 +181,25 @@ class _StatsBar extends StatelessWidget {
           _StatItem(
             icon: Icons.local_fire_department,
             value: '${stats.currentStreak}',
-            label: 'Streak',
+            label: l10n.streak,
             color: Colors.orange,
           ),
           _StatItem(
             icon: Icons.star,
             value: '${stats.totalXp}',
-            label: 'XP',
+            label: l10n.xp,
             color: Colors.amber,
           ),
           _StatItem(
             icon: Icons.school,
             value: '${stats.wordsLearned}',
-            label: 'Words',
+            label: l10n.wordsLearned,
             color: Colors.lightGreenAccent,
           ),
           _StatItem(
             icon: Icons.favorite,
             value: '${stats.hearts}',
-            label: 'Hearts',
+            label: l10n.hearts,
             color: Colors.redAccent,
           ),
         ],

@@ -5,6 +5,7 @@ import '../../../../core/audio/audio_service.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/daos/phrases_dao.dart';
 import '../../../../core/database/database_provider.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../providers/phrasebook_providers.dart';
 
 class PhraseDetailScreen extends ConsumerStatefulWidget {
@@ -143,12 +144,12 @@ class _PhraseDetailScreenState extends ConsumerState<PhraseDetailScreen> {
 
                 // Translations
                 _TranslationRow(
-                  label: 'English',
+                  label: AppLocalizations.of(context).english,
                   text: phrase.english,
                 ),
                 const SizedBox(height: 12),
                 _TranslationRow(
-                  label: 'Swahili',
+                  label: AppLocalizations.of(context).swahili,
                   text: phrase.swahili,
                 ),
 
@@ -166,7 +167,7 @@ class _PhraseDetailScreenState extends ConsumerState<PhraseDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Notes',
+                          AppLocalizations.of(context).notes,
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: theme.colorScheme.primary,
                           ),
@@ -184,7 +185,7 @@ class _PhraseDetailScreenState extends ConsumerState<PhraseDetailScreen> {
                 OutlinedButton.icon(
                   onPressed: () => audioService.replay(),
                   icon: const Icon(Icons.replay),
-                  label: const Text('Replay'),
+                  label: Text(AppLocalizations.of(context).replay),
                 ),
               ],
             ),

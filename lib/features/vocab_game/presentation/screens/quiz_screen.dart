@@ -12,6 +12,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/daos/progress_dao.dart';
 import '../../../../core/database/database_provider.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../domain/usecases/review_service.dart';
 import '../providers/vocab_providers.dart';
 
@@ -35,6 +36,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   String? _selectedAnswer;
   bool _answered = false;
   bool _isLoading = true;
+  bool _resultSaved = false;
   final _stopwatch = Stopwatch();
 
   @override
@@ -52,6 +54,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   }
 
   Future<void> _loadQuiz() async {
+    // Check hearts before starting
+    final dao = ProgressDao(ref.read(databaseProvider));
+    final hasHearts = await dao.hasHearts();
+
+    if (!hasHearts && mounted) {
+      _showNoHeartsDialog();
+      return;
+    }
+
     final cards =
         await ref.read(vocabDaoProvider).watchCardsByDeck(widget.deckId).first;
     _allCards = List.from(cards);
@@ -88,7 +99,28 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     });
   }
 
-  void _selectAnswer(String answer) {
+  void _showNoHeartsDialog() {
+    final l10n = AppLocalizations.of(context);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.noHeartsTitle),
+        content: Text(l10n.noHeartsMsg),
+        actions: [
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context);
+            },
+            child: Text(l10n.ok),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _selectAnswer(String answer) async {
     if (_answered) return;
 
     setState(() {
@@ -98,10 +130,14 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
     final question = _questions[_currentIndex];
     final isCorrect = answer == question.correctAnswer;
+    final dao = ProgressDao(ref.read(databaseProvider));
 
     if (isCorrect) {
       _correctCount++;
       _confetti.play();
+    } else {
+      // Deduct heart on wrong answer
+      await dao.useHeart();
     }
 
     // Rate via FSRS
@@ -123,49 +159,69 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     });
   }
 
+  Future<void> _saveResult() async {
+    if (_resultSaved) return;
+    _resultSaved = true;
+
+    _stopwatch.stop();
+    final score = _correctCount / _questions.length;
+    final xp = _correctCount * AppConstants.xpPerCorrectAnswer +
+        (score == 1.0 ? AppConstants.xpBonusPerfectQuiz : 0);
+
+    final dao = ProgressDao(ref.read(databaseProvider));
+
+    // Save quiz result
+    await dao.saveQuizResult(
+      QuizResultsCompanion.insert(
+        id: _uuid.v4(),
+        deckId: Value(widget.deckId),
+        quizType: 'mcq',
+        totalQuestions: _questions.length,
+        correctAnswers: _correctCount,
+        xpEarned: Value(xp),
+        durationSeconds: _stopwatch.elapsed.inSeconds,
+      ),
+    );
+
+    // Update stats
+    await dao.addXp(xp);
+    await dao.incrementQuizzesCompleted();
+
+    // Check perfect quiz achievement
+    if (score == 1.0) {
+      await dao.checkPerfectQuizAchievement();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final audioService = ref.watch(audioServiceProvider);
+    final l10n = AppLocalizations.of(context);
 
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Quiz')),
+        appBar: AppBar(title: Text(l10n.quiz)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_allCards.length < 4) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Quiz')),
-        body: const Center(
-          child: Text('Need at least 4 cards in the deck for a quiz.'),
-        ),
+        appBar: AppBar(title: Text(l10n.quiz)),
+        body: Center(child: Text(l10n.needMinCards)),
       );
     }
 
     // Quiz complete
     if (_currentIndex >= _questions.length) {
-      _stopwatch.stop();
+      _saveResult();
       final score = _correctCount / _questions.length;
       final xp = _correctCount * AppConstants.xpPerCorrectAnswer +
           (score == 1.0 ? AppConstants.xpBonusPerfectQuiz : 0);
 
-      // Save result
-      ProgressDao(ref.read(databaseProvider)).saveQuizResult(
-        QuizResultsCompanion.insert(
-          id: _uuid.v4(),
-          deckId: Value(widget.deckId),
-          quizType: 'mcq',
-          totalQuestions: _questions.length,
-          correctAnswers: _correctCount,
-          xpEarned: Value(xp),
-          durationSeconds: _stopwatch.elapsed.inSeconds,
-        ),
-      );
-
       return Scaffold(
-        appBar: AppBar(title: const Text('Results')),
+        appBar: AppBar(title: Text(l10n.results)),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -177,20 +233,28 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                score == 1.0 ? 'Perfect!' : score >= 0.8 ? 'Great job!' : 'Keep practicing!',
+                score == 1.0
+                    ? l10n.perfect
+                    : score >= 0.8
+                        ? l10n.greatJob
+                        : l10n.keepPracticing,
                 style: theme.textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
               Text(
-                '$_correctCount / ${_questions.length} correct',
+                '$_correctCount / ${_questions.length} ${l10n.correct.toLowerCase()}',
                 style: theme.textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
-              Text('+$xp XP', style: const TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('+$xp XP',
+                  style: const TextStyle(
+                      color: Colors.amber,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Done'),
+                child: Text(l10n.done),
               ),
             ],
           ),
@@ -219,7 +283,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               children: [
                 const SizedBox(height: 16),
                 Text(
-                  'What does this mean?',
+                  l10n.whatDoesThisMean,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

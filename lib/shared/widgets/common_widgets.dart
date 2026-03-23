@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../core/l10n/app_localizations.dart';
+
 /// Loading shimmer placeholder for lists
 class ShimmerList extends StatelessWidget {
   final int itemCount;
@@ -117,14 +119,14 @@ class OfflineBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
       color: Colors.orange.shade800,
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.wifi_off, size: 14, color: Colors.white),
-          SizedBox(width: 6),
+          const Icon(Icons.wifi_off, size: 14, color: Colors.white),
+          const SizedBox(width: 6),
           Text(
-            'You are offline — cached content available',
-            style: TextStyle(color: Colors.white, fontSize: 12),
+            AppLocalizations.of(context).offlineBanner,
+            style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
         ],
       ),

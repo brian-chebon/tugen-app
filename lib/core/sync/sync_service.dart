@@ -104,8 +104,6 @@ class SyncService {
 
   /// Pull latest content from Firestore → local DB
   Future<void> pullContent() async {
-    if (!_canSync) return;
-
     try {
       // Pull categories
       final catSnap =
@@ -117,7 +115,7 @@ class SyncService {
           nameEn: d['nameEn'] ?? '',
           nameSw: d['nameSw'] ?? '',
           nameTug: d['nameTug'] ?? '',
-          icon: Value(d['icon'] ?? '📚'),
+          icon: Value(d['icon'] ?? '\u{1F4DA}'),
           sortOrder: Value(d['sortOrder'] ?? 0),
         );
       }).toList();
@@ -148,7 +146,7 @@ class SyncService {
         b.insertAllOnConflictUpdate(_db.phrases, phrases);
       });
 
-      // Pull decks & vocab cards
+      // Pull decks
       final deckSnap = await _firestore.collection('decks').get();
       final decks = deckSnap.docs.map((doc) {
         final d = doc.data();
@@ -158,7 +156,7 @@ class SyncService {
           nameSw: d['nameSw'] ?? '',
           nameTug: d['nameTug'] ?? '',
           description: Value(d['description']),
-          icon: Value(d['icon'] ?? '🃏'),
+          icon: Value(d['icon'] ?? '\u{1F0CF}'),
           totalCards: Value(d['totalCards'] ?? 0),
           isPremium: Value(d['isPremium'] ?? false),
         );
@@ -166,6 +164,27 @@ class SyncService {
 
       await _db.batch((b) {
         b.insertAllOnConflictUpdate(_db.decks, decks);
+      });
+
+      // Pull vocab cards
+      final vocabSnap =
+          await _firestore.collection('vocabCards').get();
+      final vocabCards = vocabSnap.docs.map((doc) {
+        final d = doc.data();
+        return VocabCardsCompanion.insert(
+          id: doc.id,
+          deckId: d['deckId'] ?? '',
+          tugen: d['tugen'] ?? '',
+          english: d['english'] ?? '',
+          swahili: d['swahili'] ?? '',
+          audioUrl: Value(d['audioUrl']),
+          imagePath: Value(d['imagePath']),
+          difficulty: Value(d['difficulty'] ?? 1),
+        );
+      }).toList();
+
+      await _db.batch((b) {
+        b.insertAllOnConflictUpdate(_db.vocabCards, vocabCards);
       });
 
       // Pull stories
@@ -188,6 +207,27 @@ class SyncService {
 
       await _db.batch((b) {
         b.insertAllOnConflictUpdate(_db.stories, stories);
+      });
+
+      // Pull story segments
+      final segSnap =
+          await _firestore.collection('storySegments').get();
+      final segments = segSnap.docs.map((doc) {
+        final d = doc.data();
+        return StorySegmentsCompanion.insert(
+          id: doc.id,
+          storyId: d['storyId'] ?? '',
+          startMs: d['startMs'] ?? 0,
+          endMs: d['endMs'] ?? 0,
+          tugen: d['tugen'] ?? '',
+          english: d['english'] ?? '',
+          swahili: d['swahili'] ?? '',
+          sortOrder: d['sortOrder'] ?? 0,
+        );
+      }).toList();
+
+      await _db.batch((b) {
+        b.insertAllOnConflictUpdate(_db.storySegments, segments);
       });
 
       _log.i('Content sync completed');

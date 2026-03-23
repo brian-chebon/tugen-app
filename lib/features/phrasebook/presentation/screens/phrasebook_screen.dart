@@ -117,17 +117,17 @@ class PhrasebookScreen extends ConsumerWidget {
         expand: false,
         builder: (ctx, controller) => Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
-                'Bookmarked Phrases',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                AppLocalizations.of(context).bookmarkedPhrases,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
             Expanded(
               child: bookmarks.when(
                 data: (phrases) => phrases.isEmpty
-                    ? const Center(child: Text('No bookmarks yet'))
+                    ? Center(child: Text(AppLocalizations.of(context).noBookmarks))
                     : ListView.builder(
                         controller: controller,
                         itemCount: phrases.length,

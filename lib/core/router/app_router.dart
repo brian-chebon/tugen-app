@@ -11,6 +11,7 @@ import '../../features/stories/presentation/screens/stories_screen.dart';
 import '../../features/stories/presentation/screens/story_player_screen.dart';
 import '../../features/user_progress/presentation/screens/profile_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/privacy_policy_screen.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../features/phrasebook/presentation/screens/category_screen.dart';
 import '../auth/login_screen.dart';
@@ -130,6 +131,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'settings',
                     builder: (context, state) => const SettingsScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'privacy',
+                        builder: (context, state) =>
+                            const PrivacyPolicyScreen(),
+                      ),
+                    ],
                   ),
                 ],
               ),

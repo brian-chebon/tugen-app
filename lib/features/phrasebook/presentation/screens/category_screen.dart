@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/audio/audio_service.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../providers/phrasebook_providers.dart';
 
 class CategoryScreen extends ConsumerWidget {
@@ -17,11 +18,11 @@ class CategoryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Phrases'),
+        title: Text(AppLocalizations.of(context).phrases),
       ),
       body: phrases.when(
         data: (list) => list.isEmpty
-            ? const Center(child: Text('No phrases yet'))
+            ? Center(child: Text(AppLocalizations.of(context).noPhrases))
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: list.length,

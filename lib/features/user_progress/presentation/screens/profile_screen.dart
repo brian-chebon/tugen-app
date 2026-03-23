@@ -3,7 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/auth/auth_provider.dart';
+import '../../../../core/database/daos/progress_dao.dart';
+import '../../../../core/database/database_provider.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../vocab_game/presentation/providers/vocab_providers.dart';
+
+/// Watch achievements
+final achievementsProvider = StreamProvider((ref) {
+  final dao = ProgressDao(ref.watch(databaseProvider));
+  return dao.watchAchievements();
+});
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -12,11 +21,13 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final stats = ref.watch(userStatsProvider);
+    final achievementsAsync = ref.watch(achievementsProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(l10n.profile),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -43,7 +54,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              user?.displayName ?? 'Guest Learner',
+              user?.displayName ?? l10n.guestLearner,
               style: theme.textTheme.titleLarge,
             ),
             if (user?.email != null)
@@ -63,14 +74,14 @@ class ProfileScreen extends ConsumerWidget {
                         icon: Icons.local_fire_department,
                         iconColor: Colors.orange,
                         value: '${s.currentStreak}',
-                        label: 'Day Streak',
+                        label: l10n.streak,
                       ),
                       const SizedBox(width: 12),
                       _StatTile(
                         icon: Icons.star,
                         iconColor: Colors.amber,
                         value: '${s.totalXp}',
-                        label: 'Total XP',
+                        label: l10n.totalXp,
                       ),
                     ],
                   ),
@@ -81,14 +92,14 @@ class ProfileScreen extends ConsumerWidget {
                         icon: Icons.school,
                         iconColor: Colors.green,
                         value: '${s.wordsLearned}',
-                        label: 'Words Learned',
+                        label: l10n.wordsLearned,
                       ),
                       const SizedBox(width: 12),
                       _StatTile(
                         icon: Icons.auto_stories,
                         iconColor: Colors.blue,
                         value: '${s.storiesCompleted}',
-                        label: 'Stories',
+                        label: l10n.stories,
                       ),
                     ],
                   ),
@@ -99,14 +110,14 @@ class ProfileScreen extends ConsumerWidget {
                         icon: Icons.emoji_events,
                         iconColor: Colors.purple,
                         value: '${s.longestStreak}',
-                        label: 'Longest Streak',
+                        label: l10n.longestStreak,
                       ),
                       const SizedBox(width: 12),
                       _StatTile(
                         icon: Icons.quiz,
                         iconColor: Colors.teal,
                         value: '${s.quizzesCompleted}',
-                        label: 'Quizzes',
+                        label: l10n.quizzes,
                       ),
                     ],
                   ),
@@ -116,7 +127,42 @@ class ProfileScreen extends ConsumerWidget {
               error: (e, _) => Text('Error: $e'),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+
+            // Achievements section
+            achievementsAsync.when(
+              data: (badges) {
+                if (badges.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, bottom: 8),
+                      child: Text(
+                        l10n.translate('achievements'),
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: badges.map((badge) {
+                        return Chip(
+                          avatar: const Icon(Icons.military_tech,
+                              size: 18, color: Colors.amber),
+                          label: Text(badge.title),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+
+            const SizedBox(height: 24),
 
             // Sign in prompt for guests
             if (user?.isAnonymous == true)
@@ -126,14 +172,14 @@ class ProfileScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      const Text(
-                        'Create an account to save your progress across devices!',
+                      Text(
+                        l10n.saveProgress,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
                       ElevatedButton(
                         onPressed: () => context.go('/login'),
-                        child: const Text('Create Account'),
+                        child: Text(l10n.createAccount),
                       ),
                     ],
                   ),

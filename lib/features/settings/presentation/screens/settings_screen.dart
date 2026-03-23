@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/audio/audio_service.dart';
 import '../../../../core/auth/auth_provider.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -13,7 +15,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  String _cacheSize = 'Calculating...';
+  String _cacheSize = '';
 
   @override
   void initState() {
@@ -32,16 +34,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final theme = Theme.of(context);
     final locale = ref.watch(localeProvider);
     final user = ref.watch(currentUserProvider);
+    final l10n = AppLocalizations.of(context);
+
+    if (_cacheSize.isEmpty) {
+      _cacheSize = l10n.calculating;
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: ListView(
         children: [
           // Language section
-          _SectionHeader(title: 'Language'),
+          _SectionHeader(title: l10n.language),
           ListTile(
             leading: const Icon(Icons.language),
-            title: const Text('App Language'),
+            title: Text(l10n.appLanguage),
             subtitle: Text(_localeName(locale.languageCode)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showLanguagePicker(context, ref),
@@ -50,44 +57,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // Storage section
-          _SectionHeader(title: 'Storage'),
+          _SectionHeader(title: l10n.storage),
           ListTile(
             leading: const Icon(Icons.storage),
-            title: const Text('Audio Cache'),
+            title: Text(l10n.audioCache),
             subtitle: Text(_cacheSize),
           ),
           ListTile(
             leading: const Icon(Icons.delete_outline),
-            title: const Text('Clear Audio Cache'),
-            subtitle: const Text('Remove downloaded audio files'),
+            title: Text(l10n.clearCache),
+            subtitle: Text(l10n.clearCacheDesc),
             onTap: () async {
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('Clear Cache?'),
-                  content: const Text(
-                    'This will remove all downloaded audio. '
-                    'You can re-download them later.',
-                  ),
+                  title: Text(l10n.clearCacheConfirm),
+                  content: Text(l10n.clearCacheMsg),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.cancel),
                     ),
                     FilledButton(
                       onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Clear'),
+                      child: Text(l10n.clear),
                     ),
                   ],
                 ),
               );
 
-              if (confirmed == true) {
+              if (confirmed == true && mounted) {
                 await ref.read(audioServiceProvider).clearCache();
                 _loadCacheSize();
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Cache cleared')),
+                    SnackBar(content: Text(l10n.cacheCleared)),
                   );
                 }
               }
@@ -97,26 +101,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // Account section
-          _SectionHeader(title: 'Account'),
+          _SectionHeader(title: l10n.account),
           if (user != null && !user.isAnonymous) ...[
             ListTile(
               leading: const Icon(Icons.email),
-              title: const Text('Email'),
-              subtitle: Text(user.email ?? 'Not set'),
+              title: Text(l10n.email),
+              subtitle: Text(user.email ?? l10n.translate('notSet')),
             ),
           ],
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('Privacy Policy'),
-            subtitle: const Text('How we handle your data'),
-            onTap: () {
-              // Open privacy policy
-            },
+            title: Text(l10n.privacyPolicy),
+            subtitle: Text(l10n.privacyPolicyDesc),
+            onTap: () => context.go('/profile/settings/privacy'),
           ),
           ListTile(
             leading: const Icon(Icons.info_outline),
-            title: const Text('About'),
-            subtitle: const Text('Tugen Language Learning App v1.0.0'),
+            title: Text(l10n.about),
+            subtitle: Text('${l10n.aboutDesc} v1.0.0'),
           ),
 
           const Divider(),
@@ -126,7 +128,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: Icon(Icons.logout, color: theme.colorScheme.error),
               title: Text(
-                'Sign Out',
+                l10n.logout,
                 style: TextStyle(color: theme.colorScheme.error),
               ),
               onTap: () async {
@@ -137,7 +139,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 32),
           Center(
             child: Text(
-              'Made with ❤️ for Tugen speakers',
+              l10n.madeWith,
               style: theme.textTheme.bodySmall,
             ),
           ),
@@ -148,17 +150,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showLanguagePicker(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
-                'Select Language',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                l10n.selectLanguage,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
             for (final lang in [
@@ -167,10 +171,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ('tug', 'Tugen'),
             ])
               ListTile(
-                leading: Radio<String>(
-                  value: lang.$1,
-                  groupValue: ref.read(localeProvider).languageCode,
-                  onChanged: (_) {},
+                leading: Icon(
+                  ref.read(localeProvider).languageCode == lang.$1
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: Theme.of(ctx).colorScheme.primary,
                 ),
                 title: Text(lang.$2),
                 onTap: () {

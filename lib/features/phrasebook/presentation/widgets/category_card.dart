@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/l10n/app_localizations.dart';
 
 class CategoryCard extends StatelessWidget {
   final Category category;
@@ -56,10 +57,11 @@ class PhraseSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return TextField(
       onChanged: onChanged,
       decoration: InputDecoration(
-        hintText: 'Search phrases in Tugen, English, or Swahili...',
+        hintText: l10n.searchHint,
         prefixIcon: const Icon(Icons.search),
         suffixIcon: IconButton(
           icon: const Icon(Icons.clear),

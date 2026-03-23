@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../l10n/app_localizations.dart';
 import 'auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -72,9 +73,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(AppLocalizations.of(context).validEmail)),
+      );
+      return;
+    }
+
+    try {
+      final auth = ref.read(authServiceProvider);
+      await auth.resetPassword(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text(AppLocalizations.of(context).resetPasswordSent)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -94,12 +125,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Tugen',
+                  l10n.appName,
                   style: theme.textTheme.headlineLarge,
                   textAlign: TextAlign.center,
                 ),
                 Text(
-                  'Learn the Tugen Language',
+                  l10n.learnTugen,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -111,12 +142,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
+                  decoration: InputDecoration(
+                    labelText: l10n.email,
+                    prefixIcon: const Icon(Icons.email_outlined),
                   ),
                   validator: (v) =>
-                      v != null && v.contains('@') ? null : 'Enter valid email',
+                      v != null && v.contains('@') ? null : l10n.validEmail,
                 ),
                 const SizedBox(height: 16),
 
@@ -124,15 +155,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outlined),
+                  decoration: InputDecoration(
+                    labelText: l10n.password,
+                    prefixIcon: const Icon(Icons.lock_outlined),
                   ),
                   validator: (v) => v != null && v.length >= 6
                       ? null
-                      : 'Min 6 characters',
+                      : l10n.minPassword,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 8),
+
+                // Forgot password
+                if (_isLogin)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _resetPassword,
+                      child: Text(l10n.forgotPassword),
+                    ),
+                  ),
+                const SizedBox(height: 16),
 
                 // Submit button
                 ElevatedButton(
@@ -143,7 +185,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(_isLogin ? 'Sign In' : 'Create Account'),
+                      : Text(_isLogin ? l10n.signIn : l10n.createAccount),
                 ),
                 const SizedBox(height: 12),
 
@@ -151,9 +193,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 TextButton(
                   onPressed: () => setState(() => _isLogin = !_isLogin),
                   child: Text(
-                    _isLogin
-                        ? "Don't have an account? Sign Up"
-                        : 'Already have an account? Sign In',
+                    _isLogin ? l10n.noAccount : l10n.hasAccount,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -162,7 +202,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 OutlinedButton.icon(
                   onPressed: _isLoading ? null : _continueAsGuest,
                   icon: const Icon(Icons.person_outline),
-                  label: const Text('Continue as Guest'),
+                  label: Text(l10n.continueAsGuest),
                 ),
               ],
             ),

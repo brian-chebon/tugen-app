@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -15,12 +16,17 @@ void callbackDispatcher() {
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
+      final user = FirebaseAuth.instance.currentUser;
       final db = AppDatabase();
-      final syncService = SyncService(db, null); // TODO: get cached userId
+      final syncService = SyncService(db, user?.uid);
 
       switch (taskName) {
         case 'syncUserProgress':
           await syncService.processQueue();
+          await syncService.pullContent();
+          if (user != null) {
+            await syncService.pullUserProgress();
+          }
           break;
         default:
           break;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/database/app_database.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../providers/stories_providers.dart';
 
 class StoriesScreen extends ConsumerWidget {
@@ -12,31 +13,39 @@ class StoriesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stories = ref.watch(storiesProvider);
     final selectedDiff = ref.watch(selectedDifficultyProvider);
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Stories')),
+      appBar: AppBar(title: Text(l10n.stories)),
       body: Column(
         children: [
           // Difficulty filter chips
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
                 _FilterChip(
-                  label: 'All',
+                  label: l10n.all,
                   selected: selectedDiff == null,
-                  onTap: () =>
-                      ref.read(selectedDifficultyProvider.notifier).select(null),
+                  onTap: () => ref
+                      .read(selectedDifficultyProvider.notifier)
+                      .select(null),
                 ),
                 const SizedBox(width: 8),
-                for (final diff in ['beginner', 'intermediate', 'advanced'])
+                for (final diff in [
+                  ('beginner', l10n.beginner),
+                  ('intermediate', l10n.intermediate),
+                  ('advanced', l10n.advanced),
+                ])
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: _FilterChip(
-                      label: diff[0].toUpperCase() + diff.substring(1),
-                      selected: selectedDiff == diff,
+                      label: diff.$2,
+                      selected: selectedDiff == diff.$1,
                       onTap: () => ref
                           .read(selectedDifficultyProvider.notifier)
-                          .select(diff),
+                          .select(diff.$1),
                     ),
                   ),
               ],
@@ -48,13 +57,13 @@ class StoriesScreen extends ConsumerWidget {
             child: stories.when(
               data: (list) {
                 final filtered = selectedDiff != null
-                    ? list.where((s) => s.difficulty == selectedDiff).toList()
+                    ? list
+                        .where((s) => s.difficulty == selectedDiff)
+                        .toList()
                     : list;
 
                 if (filtered.isEmpty) {
-                  return const Center(
-                    child: Text('No stories available yet.'),
-                  );
+                  return Center(child: Text(l10n.noStories));
                 }
 
                 return ListView.builder(
@@ -64,7 +73,8 @@ class StoriesScreen extends ConsumerWidget {
                     final story = filtered[i];
                     return _StoryCard(
                       story: story,
-                      onTap: () => context.go('/stories/play/${story.id}'),
+                      onTap: () =>
+                          context.go('/stories/play/${story.id}'),
                     );
                   },
                 );
@@ -156,7 +166,8 @@ class _StoryCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.timer_outlined, size: 14,
+                        Icon(Icons.timer_outlined,
+                            size: 14,
                             color: theme.colorScheme.onSurfaceVariant),
                         const SizedBox(width: 4),
                         Text('$minutes min',
@@ -188,11 +199,18 @@ class _DifficultyBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final color = switch (difficulty) {
       'beginner' => Colors.green,
       'intermediate' => Colors.orange,
       'advanced' => Colors.red,
       _ => Colors.grey,
+    };
+    final label = switch (difficulty) {
+      'beginner' => l10n.beginner,
+      'intermediate' => l10n.intermediate,
+      'advanced' => l10n.advanced,
+      _ => difficulty,
     };
 
     return Container(
@@ -202,8 +220,9 @@ class _DifficultyBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        difficulty,
-        style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+        label,
+        style: TextStyle(
+            fontSize: 11, color: color, fontWeight: FontWeight.w600),
       ),
     );
   }
