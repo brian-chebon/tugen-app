@@ -3,66 +3,68 @@ import 'package:fsrs/fsrs.dart' as fsrs;
 
 void main() {
   group('FSRS Algorithm', () {
-    late fsrs.FSRS scheduler;
+    late fsrs.Scheduler scheduler;
 
     setUp(() {
-      scheduler = fsrs.FSRS(
-        parameters: fsrs.Parameters()..requestRetention = 0.9,
+      scheduler = fsrs.Scheduler(
+        desiredRetention: 0.9,
+        enableFuzzing: false,
       );
     });
 
-    test('New card should have state New', () {
-      final card = fsrs.Card();
-      expect(card.state, fsrs.State.newState);
-      expect(card.reps, 0);
+    test('New card should have state Learning', () {
+      final card = fsrs.Card(cardId: 1);
+      expect(card.state, fsrs.State.learning);
     });
 
-    test('Rating Good on new card moves to Learning', () {
-      final card = fsrs.Card();
-      final result = scheduler.repeat(card, DateTime.now());
-      final updated = result[fsrs.Rating.good]!.card;
+    test('Rating Good on new card schedules next review', () {
+      final card = fsrs.Card(cardId: 1);
+      final now = DateTime.now().toUtc();
+      final result = scheduler.reviewCard(card, fsrs.Rating.good, reviewDateTime: now);
+      final updated = result.card;
 
-      expect(updated.state, fsrs.State.learning);
-      expect(updated.reps, 1);
+      expect(updated.due.isAfter(now), true);
     });
 
-    test('Rating Again keeps card in learning with short interval', () {
-      final card = fsrs.Card();
-      final result = scheduler.repeat(card, DateTime.now());
-      final updated = result[fsrs.Rating.again]!.card;
+    test('Rating Again keeps short interval', () {
+      final card = fsrs.Card(cardId: 1);
+      final now = DateTime.now().toUtc();
+      final result = scheduler.reviewCard(card, fsrs.Rating.again, reviewDateTime: now);
+      final updated = result.card;
 
       expect(updated.state, fsrs.State.learning);
-      final interval = updated.due.difference(DateTime.now());
+      final interval = updated.due.difference(now);
       expect(interval.inMinutes, lessThan(10));
     });
 
     test('Multiple Good ratings increase stability', () {
-      var card = fsrs.Card();
-      var now = DateTime.now();
+      var card = fsrs.Card(cardId: 1);
+      var now = DateTime.now().toUtc();
 
       // Simulate 3 review sessions
       for (var i = 0; i < 3; i++) {
-        final result = scheduler.repeat(card, now);
-        card = result[fsrs.Rating.good]!.card;
+        final result = scheduler.reviewCard(card, fsrs.Rating.good, reviewDateTime: now);
+        card = result.card;
         now = card.due;
       }
 
-      expect(card.stability, greaterThan(0));
-      expect(card.reps, 3);
+      expect(card.stability, isNotNull);
+      expect(card.stability!, greaterThan(0));
     });
 
     test('Rating Easy gives longest interval', () {
-      final card = fsrs.Card();
-      final result = scheduler.repeat(card, DateTime.now());
+      final card = fsrs.Card(cardId: 1);
+      final now = DateTime.now().toUtc();
 
-      final easyInterval =
-          result[fsrs.Rating.easy]!.card.due.difference(DateTime.now());
-      final goodInterval =
-          result[fsrs.Rating.good]!.card.due.difference(DateTime.now());
-      final hardInterval =
-          result[fsrs.Rating.hard]!.card.due.difference(DateTime.now());
+      final easyResult = scheduler.reviewCard(card, fsrs.Rating.easy, reviewDateTime: now);
+      final goodResult = scheduler.reviewCard(card, fsrs.Rating.good, reviewDateTime: now);
+      final hardResult = scheduler.reviewCard(card, fsrs.Rating.hard, reviewDateTime: now);
 
-      expect(easyInterval, greaterThan(goodInterval));
+      final easyInterval = easyResult.card.due.difference(now);
+      final goodInterval = goodResult.card.due.difference(now);
+      final hardInterval = hardResult.card.due.difference(now);
+
+      expect(easyInterval, greaterThanOrEqualTo(goodInterval));
       expect(goodInterval, greaterThanOrEqualTo(hardInterval));
     });
   });

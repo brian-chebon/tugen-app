@@ -29,7 +29,7 @@ class SyncService {
 
   SyncService(this._db, this._userId);
 
-  bool get _canSync => _userId != null && _userId!.isNotEmpty;
+  bool get _canSync => _userId?.isNotEmpty ?? false;
 
   /// Enqueue an action for later sync
   Future<void> enqueue({
@@ -113,7 +113,7 @@ class SyncService {
       final cats = catSnap.docs.map((doc) {
         final d = doc.data();
         return CategoriesCompanion.insert(
-          id: Value(doc.id),
+          id: doc.id,
           nameEn: d['nameEn'] ?? '',
           nameSw: d['nameSw'] ?? '',
           nameTug: d['nameTug'] ?? '',
@@ -132,7 +132,7 @@ class SyncService {
       final phrases = phraseSnap.docs.map((doc) {
         final d = doc.data();
         return PhrasesCompanion.insert(
-          id: Value(doc.id),
+          id: doc.id,
           categoryId: d['categoryId'] ?? '',
           tugen: d['tugen'] ?? '',
           english: d['english'] ?? '',
@@ -153,7 +153,7 @@ class SyncService {
       final decks = deckSnap.docs.map((doc) {
         final d = doc.data();
         return DecksCompanion.insert(
-          id: Value(doc.id),
+          id: doc.id,
           nameEn: d['nameEn'] ?? '',
           nameSw: d['nameSw'] ?? '',
           nameTug: d['nameTug'] ?? '',
@@ -174,7 +174,7 @@ class SyncService {
       final stories = storySnap.docs.map((doc) {
         final d = doc.data();
         return StoriesCompanion.insert(
-          id: Value(doc.id),
+          id: doc.id,
           titleEn: d['titleEn'] ?? '',
           titleSw: d['titleSw'] ?? '',
           titleTug: d['titleTug'] ?? '',
@@ -210,7 +210,7 @@ class SyncService {
       final progress = progressSnap.docs.map((doc) {
         final d = doc.data();
         return UserProgressCompanion.insert(
-          id: Value(doc.id),
+          id: doc.id,
           cardId: d['cardId'] ?? '',
           cardType: d['cardType'] ?? 'vocab',
           stability: Value(

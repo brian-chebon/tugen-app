@@ -64,7 +64,7 @@ class PhrasesDao extends DatabaseAccessor<AppDatabase>
     } else {
       await into(bookmarks).insert(
         BookmarksCompanion.insert(
-          id: Value(phraseId),
+          id: phraseId,
           phraseId: phraseId,
         ),
       );

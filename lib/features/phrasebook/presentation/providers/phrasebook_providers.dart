@@ -33,4 +33,11 @@ final isBookmarkedProvider =
 });
 
 /// Search query state
-final searchQueryProvider = StateProvider<String>((ref) => '');
+final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
+
+class SearchQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void update(String value) => state = value;
+}

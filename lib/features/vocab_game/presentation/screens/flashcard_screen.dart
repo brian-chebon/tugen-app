@@ -34,7 +34,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
     if (widget.deckId == 'due') {
       cards = await dao.getDueCards();
     } else {
-      cards = await (await dao.watchCardsByDeck(widget.deckId).first);
+      cards = await dao.watchCardsByDeck(widget.deckId).first;
     }
 
     setState(() {

@@ -154,7 +154,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       // Save result
       ProgressDao(ref.read(databaseProvider)).saveQuizResult(
         QuizResultsCompanion.insert(
-          id: Value(_uuid.v4()),
+          id: _uuid.v4(),
           deckId: Value(widget.deckId),
           quizType: 'mcq',
           totalQuestions: _questions.length,

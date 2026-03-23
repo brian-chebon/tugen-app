@@ -26,7 +26,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/phrasebook',
     redirect: (context, state) {
-      final isLoggedIn = authState.valueOrNull != null;
+      final isLoggedIn = authState.value != null;
       final isOnLogin = state.matchedLocation == '/login';
 
       // Allow unauthenticated access to main features

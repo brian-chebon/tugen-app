@@ -12,8 +12,6 @@ class StoriesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stories = ref.watch(storiesProvider);
     final selectedDiff = ref.watch(selectedDifficultyProvider);
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Stories')),
       body: Column(
@@ -27,7 +25,7 @@ class StoriesScreen extends ConsumerWidget {
                   label: 'All',
                   selected: selectedDiff == null,
                   onTap: () =>
-                      ref.read(selectedDifficultyProvider.notifier).state = null,
+                      ref.read(selectedDifficultyProvider.notifier).select(null),
                 ),
                 const SizedBox(width: 8),
                 for (final diff in ['beginner', 'intermediate', 'advanced'])
@@ -38,7 +36,7 @@ class StoriesScreen extends ConsumerWidget {
                       selected: selectedDiff == diff,
                       onTap: () => ref
                           .read(selectedDifficultyProvider.notifier)
-                          .state = diff,
+                          .select(diff),
                     ),
                   ),
               ],

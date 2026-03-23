@@ -8,7 +8,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
 
 /// Current user (nullable)
 final currentUserProvider = Provider<User?>((ref) {
-  return ref.watch(authStateProvider).valueOrNull;
+  return ref.watch(authStateProvider).value;
 });
 
 /// Auth service for login/signup/logout

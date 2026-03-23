@@ -17,4 +17,12 @@ final storySegmentsProvider =
   return ref.watch(storiesDaoProvider).watchSegments(storyId);
 });
 
-final selectedDifficultyProvider = StateProvider<String?>((ref) => null);
+final selectedDifficultyProvider =
+    NotifierProvider<SelectedDifficultyNotifier, String?>(SelectedDifficultyNotifier.new);
+
+class SelectedDifficultyNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void select(String? value) => state = value;
+}

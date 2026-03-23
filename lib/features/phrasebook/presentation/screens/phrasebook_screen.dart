@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../providers/phrasebook_providers.dart';
 import '../widgets/category_card.dart';
-import '../widgets/search_bar_widget.dart';
+
 
 class PhrasebookScreen extends ConsumerWidget {
   const PhrasebookScreen({super.key});
@@ -38,7 +38,7 @@ class PhrasebookScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               child: PhraseSearchBar(
                 onChanged: (q) =>
-                    ref.read(searchQueryProvider.notifier).state = q,
+                    ref.read(searchQueryProvider.notifier).update(q),
               ),
             ),
           ),
