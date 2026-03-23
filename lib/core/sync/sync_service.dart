@@ -1,19 +1,21 @@
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../database/app_database.dart';
 import '../database/database_provider.dart';
 import '../auth/auth_provider.dart';
+import '../supabase/supabase_provider.dart';
 
 final syncServiceProvider = Provider<SyncService>((ref) {
   final db = ref.watch(databaseProvider);
   final user = ref.watch(currentUserProvider);
-  return SyncService(db, user?.uid);
+  final supabase = ref.watch(supabaseClientProvider);
+  return SyncService(db, user?.uid, supabase);
 });
 
 /// Connectivity stream
@@ -24,10 +26,10 @@ final connectivityProvider = StreamProvider<List<ConnectivityResult>>((ref) {
 class SyncService {
   final AppDatabase _db;
   final String? _userId;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final SupabaseClient _supabase;
   final Logger _log = Logger();
 
-  SyncService(this._db, this._userId);
+  SyncService(this._db, this._userId, this._supabase);
 
   bool get _canSync => _userId?.isNotEmpty ?? false;
 
@@ -82,61 +84,60 @@ class SyncService {
 
   Future<void> _syncItem(SyncQueueData item) async {
     final payload = jsonDecode(item.payload) as Map<String, dynamic>;
-    final docRef = _firestore
-        .collection('users')
-        .doc(_userId)
-        .collection(item.entityType)
-        .doc(item.entityId);
+    // User data is stored in tables prefixed with user_ (e.g., user_progress)
+    final table = 'user_${item.entityType}';
 
     switch (item.action) {
       case 'create':
       case 'update':
-        await docRef.set({
+        await _supabase.from(table).upsert({
           ...payload,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+          'id': item.entityId,
+          'user_id': _userId,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
         break;
       case 'delete':
-        await docRef.delete();
+        await _supabase
+            .from(table)
+            .delete()
+            .eq('id', item.entityId)
+            .eq('user_id', _userId!);
         break;
     }
   }
 
-  /// Pull latest content from Firestore → local DB
+  /// Pull latest content from Supabase → local DB
   Future<void> pullContent() async {
     try {
       // Pull categories
-      final catSnap =
-          await _firestore.collection('categories').get();
-      final cats = catSnap.docs.map((doc) {
-        final d = doc.data();
+      final cats = await _supabase.from('categories').select();
+      final catCompanions = cats.map((d) {
         return CategoriesCompanion.insert(
-          id: doc.id,
-          nameEn: d['nameEn'] ?? '',
-          nameSw: d['nameSw'] ?? '',
-          nameTug: d['nameTug'] ?? '',
+          id: d['id'] as String,
+          nameEn: d['name_en'] ?? '',
+          nameSw: d['name_sw'] ?? '',
+          nameTug: d['name_tug'] ?? '',
           icon: Value(d['icon'] ?? '\u{1F4DA}'),
-          sortOrder: Value(d['sortOrder'] ?? 0),
+          sortOrder: Value(d['sort_order'] ?? 0),
         );
       }).toList();
 
       await _db.batch((b) {
-        b.insertAllOnConflictUpdate(_db.categories, cats);
+        b.insertAllOnConflictUpdate(_db.categories, catCompanions);
       });
 
       // Pull phrases
-      final phraseSnap =
-          await _firestore.collection('phrases').get();
-      final phrases = phraseSnap.docs.map((doc) {
-        final d = doc.data();
+      final phraseRows = await _supabase.from('phrases').select();
+      final phrases = phraseRows.map((d) {
         return PhrasesCompanion.insert(
-          id: doc.id,
-          categoryId: d['categoryId'] ?? '',
+          id: d['id'] as String,
+          categoryId: d['category_id'] ?? '',
           tugen: d['tugen'] ?? '',
           english: d['english'] ?? '',
           swahili: d['swahili'] ?? '',
           pronunciation: Value(d['pronunciation']),
-          audioUrl: Value(d['audioUrl']),
+          audioUrl: Value(d['audio_url']),
           difficulty: Value(d['difficulty'] ?? 1),
           notes: Value(d['notes']),
         );
@@ -147,18 +148,17 @@ class SyncService {
       });
 
       // Pull decks
-      final deckSnap = await _firestore.collection('decks').get();
-      final decks = deckSnap.docs.map((doc) {
-        final d = doc.data();
+      final deckRows = await _supabase.from('decks').select();
+      final decks = deckRows.map((d) {
         return DecksCompanion.insert(
-          id: doc.id,
-          nameEn: d['nameEn'] ?? '',
-          nameSw: d['nameSw'] ?? '',
-          nameTug: d['nameTug'] ?? '',
+          id: d['id'] as String,
+          nameEn: d['name_en'] ?? '',
+          nameSw: d['name_sw'] ?? '',
+          nameTug: d['name_tug'] ?? '',
           description: Value(d['description']),
           icon: Value(d['icon'] ?? '\u{1F0CF}'),
-          totalCards: Value(d['totalCards'] ?? 0),
-          isPremium: Value(d['isPremium'] ?? false),
+          totalCards: Value(d['total_cards'] ?? 0),
+          isPremium: Value(d['is_premium'] ?? false),
         );
       }).toList();
 
@@ -167,18 +167,16 @@ class SyncService {
       });
 
       // Pull vocab cards
-      final vocabSnap =
-          await _firestore.collection('vocabCards').get();
-      final vocabCards = vocabSnap.docs.map((doc) {
-        final d = doc.data();
+      final vocabRows = await _supabase.from('vocab_cards').select();
+      final vocabCards = vocabRows.map((d) {
         return VocabCardsCompanion.insert(
-          id: doc.id,
-          deckId: d['deckId'] ?? '',
+          id: d['id'] as String,
+          deckId: d['deck_id'] ?? '',
           tugen: d['tugen'] ?? '',
           english: d['english'] ?? '',
           swahili: d['swahili'] ?? '',
-          audioUrl: Value(d['audioUrl']),
-          imagePath: Value(d['imagePath']),
+          audioUrl: Value(d['audio_url']),
+          imagePath: Value(d['image_path']),
           difficulty: Value(d['difficulty'] ?? 1),
         );
       }).toList();
@@ -188,20 +186,18 @@ class SyncService {
       });
 
       // Pull stories
-      final storySnap =
-          await _firestore.collection('stories').get();
-      final stories = storySnap.docs.map((doc) {
-        final d = doc.data();
+      final storyRows = await _supabase.from('stories').select();
+      final stories = storyRows.map((d) {
         return StoriesCompanion.insert(
-          id: doc.id,
-          titleEn: d['titleEn'] ?? '',
-          titleSw: d['titleSw'] ?? '',
-          titleTug: d['titleTug'] ?? '',
+          id: d['id'] as String,
+          titleEn: d['title_en'] ?? '',
+          titleSw: d['title_sw'] ?? '',
+          titleTug: d['title_tug'] ?? '',
           description: Value(d['description']),
-          audioUrl: Value(d['audioUrl']),
-          durationSeconds: Value(d['durationSeconds'] ?? 0),
+          audioUrl: Value(d['audio_url']),
+          durationSeconds: Value(d['duration_seconds'] ?? 0),
           difficulty: Value(d['difficulty'] ?? 'beginner'),
-          coverImageUrl: Value(d['coverImageUrl']),
+          coverImageUrl: Value(d['cover_image_url']),
         );
       }).toList();
 
@@ -210,19 +206,17 @@ class SyncService {
       });
 
       // Pull story segments
-      final segSnap =
-          await _firestore.collection('storySegments').get();
-      final segments = segSnap.docs.map((doc) {
-        final d = doc.data();
+      final segRows = await _supabase.from('story_segments').select();
+      final segments = segRows.map((d) {
         return StorySegmentsCompanion.insert(
-          id: doc.id,
-          storyId: d['storyId'] ?? '',
-          startMs: d['startMs'] ?? 0,
-          endMs: d['endMs'] ?? 0,
+          id: d['id'] as String,
+          storyId: d['story_id'] ?? '',
+          startMs: d['start_ms'] ?? 0,
+          endMs: d['end_ms'] ?? 0,
           tugen: d['tugen'] ?? '',
           english: d['english'] ?? '',
           swahili: d['swahili'] ?? '',
-          sortOrder: d['sortOrder'] ?? 0,
+          sortOrder: d['sort_order'] ?? 0,
         );
       }).toList();
 
@@ -236,23 +230,21 @@ class SyncService {
     }
   }
 
-  /// Pull user progress from Firestore → local
+  /// Pull user progress from Supabase → local
   Future<void> pullUserProgress() async {
     if (!_canSync) return;
 
     try {
-      final progressSnap = await _firestore
-          .collection('users')
-          .doc(_userId)
-          .collection('progress')
-          .get();
+      final progressRows = await _supabase
+          .from('user_progress')
+          .select()
+          .eq('user_id', _userId!);
 
-      final progress = progressSnap.docs.map((doc) {
-        final d = doc.data();
+      final progress = progressRows.map((d) {
         return UserProgressCompanion.insert(
-          id: doc.id,
-          cardId: d['cardId'] ?? '',
-          cardType: d['cardType'] ?? 'vocab',
+          id: d['id'] as String,
+          cardId: d['card_id'] ?? '',
+          cardType: d['card_type'] ?? 'vocab',
           stability: Value(
               (d['stability'] as num?)?.toDouble() ?? 0.0),
           difficulty: Value(
@@ -260,11 +252,11 @@ class SyncService {
           reps: Value(d['reps'] ?? 0),
           lapses: Value(d['lapses'] ?? 0),
           state: Value(d['state'] ?? 0),
-          lastReview: Value(d['lastReview'] != null
-              ? (d['lastReview'] as Timestamp).toDate()
+          lastReview: Value(d['last_review'] != null
+              ? DateTime.parse(d['last_review'] as String)
               : null),
-          nextReview: Value(d['nextReview'] != null
-              ? (d['nextReview'] as Timestamp).toDate()
+          nextReview: Value(d['next_review'] != null
+              ? DateTime.parse(d['next_review'] as String)
               : null),
         );
       }).toList();

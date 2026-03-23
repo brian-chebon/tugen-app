@@ -14,7 +14,7 @@ Learn the Tugen (Kalenjin) language through interactive phrases, vocabulary game
 
 ```
 Feature-first Clean Architecture + Riverpod
-├── core/         (audio, auth, database, network, sync, router, l10n, theme)
+├── core/         (audio, auth, database, network, supabase, sync, router, l10n, theme)
 ├── features/     (phrasebook, vocab_game, stories, user_progress, settings)
 └── shared/       (models, widgets, extensions)
 ```
@@ -22,7 +22,10 @@ Feature-first Clean Architecture + Riverpod
 **Key decisions:**
 - **State Management**: Riverpod (compile-safe, async-native)
 - **Local DB**: Drift (type-safe SQL, reactive streams, migrations)
-- **Backend**: Firebase (Auth, Firestore, Storage, Analytics)
+- **Auth**: Firebase Auth (email/password, anonymous, account linking)
+- **Database**: Supabase (PostgreSQL with Row Level Security)
+- **File Storage**: Firebase Storage (audio, images)
+- **Analytics**: Firebase Analytics
 - **Audio**: just_audio (gapless, clip playback, speed control)
 - **Spaced Repetition**: FSRS v4 via `fsrs` package (20-30% fewer reviews than SM-2)
 - **Background Sync**: workmanager + transactional outbox pattern
@@ -33,6 +36,7 @@ Feature-first Clean Architecture + Riverpod
 - Flutter SDK >= 3.24.0
 - Dart >= 3.5.0
 - Firebase CLI (`npm install -g firebase-tools`)
+- A Supabase project (https://supabase.com)
 - Android Studio / Xcode
 
 ### Steps
@@ -44,7 +48,7 @@ Feature-first Clean Architecture + Riverpod
    flutter pub get
    ```
 
-2. **Configure Firebase**
+2. **Configure Firebase (Auth, Storage, Analytics)**
    ```bash
    # Login to Firebase
    firebase login
@@ -55,52 +59,48 @@ Feature-first Clean Architecture + Riverpod
    # This auto-generates lib/firebase_options.dart
    ```
 
-3. **Generate Drift database code**
+3. **Configure Supabase (Database)**
+   ```bash
+   # Copy the env example and fill in your Supabase credentials
+   cp .env.example .env
+
+   # Run the schema SQL in Supabase SQL Editor
+   # See supabase/schema.sql
+   ```
+
+4. **Generate Drift database code**
    ```bash
    dart run build_runner build --delete-conflicting-outputs
    ```
 
-4. **Seed Firestore with initial content**
+5. **Seed Supabase with initial content**
    ```bash
-   # Option A: Run seed script and import JSON via Firebase Console
-   dart run tools/seed_firestore.dart
-
-   # Option B: Use Firebase Admin SDK (Node.js)
+   # Option A: Run seed SQL directly in Supabase SQL Editor
+   # Option B: Use the Supabase Dashboard Table Editor
+   # Option C: Use supabase-js with service role key
+   dart run scripts/seed_supabase.dart  # prints instructions
    ```
 
-5. **Run the app**
+6. **Run the app**
    ```bash
-   flutter run
+   # Pass Supabase credentials via dart-define
+   flutter run \
+     --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+     --dart-define=SUPABASE_ANON_KEY=your-anon-key
    ```
 
 ### Firebase Setup Checklist
 - [ ] Create Firebase project at https://console.firebase.google.com
 - [ ] Enable Authentication (Email/Password + Anonymous)
-- [ ] Create Firestore database (start in test mode, then add rules)
 - [ ] Create Storage bucket for audio files
 - [ ] Enable Analytics
 - [ ] Run `flutterfire configure` and replace firebase_options.dart
 
-### Firestore Security Rules
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Public content — anyone can read
-    match /categories/{doc} { allow read: if true; }
-    match /phrases/{doc} { allow read: if true; }
-    match /decks/{doc} { allow read: if true; }
-    match /vocabCards/{doc} { allow read: if true; }
-    match /stories/{doc} { allow read: if true; }
-    match /storySegments/{doc} { allow read: if true; }
-
-    // User data — only owner can read/write
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
+### Supabase Setup Checklist
+- [ ] Create Supabase project at https://supabase.com
+- [ ] Run `supabase/schema.sql` in the SQL Editor to create tables and RLS policies
+- [ ] Seed initial content (categories, phrases, decks, vocab cards, stories)
+- [ ] Copy Project URL and anon key to `.env` / `--dart-define` flags
 
 ## Code Generation
 
@@ -134,7 +134,7 @@ Record with Audacity or smartphone in a quiet environment.
 
 ```
 lib/
-├── main.dart                    # Entry point
+├── main.dart                    # Entry point (Firebase + Supabase init)
 ├── app.dart                     # MaterialApp with routing & theming
 ├── firebase_options.dart        # Auto-generated Firebase config
 ├── core/
@@ -155,8 +155,10 @@ lib/
 │   ├── router/
 │   │   ├── app_router.dart            # go_router with shell routes
 │   │   └── shell_scaffold.dart        # Bottom nav shell
+│   ├── supabase/
+│   │   └── supabase_provider.dart     # Supabase client provider
 │   ├── sync/
-│   │   ├── sync_service.dart          # Offline sync engine
+│   │   ├── sync_service.dart          # Offline sync engine (Supabase)
 │   │   └── sync_worker.dart           # Background worker
 │   └── theme/app_theme.dart           # Material 3 theme
 ├── features/
@@ -191,8 +193,8 @@ lib/
 ├── shared/
 │   ├── extensions/context_extensions.dart
 │   └── widgets/common_widgets.dart
-└── tools/
-    └── seed_firestore.dart   # Content seeder script
+└── scripts/
+    └── seed_supabase.dart   # Content seeder script
 ```
 
 ## License

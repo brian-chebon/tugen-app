@@ -6,7 +6,7 @@ build/
 .flutter-plugins-dependencies
 *.iml
 .metadata
-pubspec.lock
+# pubspec.lock is committed for reproducible builds (Dart app convention)
 
 # IDE
 .idea/
@@ -21,16 +21,36 @@ pubspec.lock
 *.g.dart
 *.freezed.dart
 
-# Firebase
+# ─── Secrets & Credentials ───
+
+# Environment variables (contains Supabase keys, API tokens, etc.)
+.env
+.env.*
+!.env.example
+
+# Firebase platform credentials
 google-services.json
 GoogleService-Info.plist
 firebase_app_id_file.json
+lib/firebase_options.dart
 
-# Env/secrets
-.env
+# Supabase local config (contains service role key)
+supabase/.env
+supabase/.temp/
+
+# Signing keys & keystores
 *.key
+*.pem
+*.p12
 *.jks
 *.keystore
+key.properties
 
-# Coverage
+# Service account files
+*-service-account*.json
+service-account*.json
+*credentials*.json
+*secret*.json
+
+# ─── Coverage & Testing ───
 coverage/

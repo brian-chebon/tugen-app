@@ -24,17 +24,17 @@ class AppConstants {
   static const int maxSyncRetries = 3;
   static const int syncBatchSize = 50;
 
-  // Firebase collections
-  static const String colCategories = 'categories';
-  static const String colPhrases = 'phrases';
-  static const String colDecks = 'decks';
-  static const String colVocabCards = 'vocabCards';
-  static const String colStories = 'stories';
-  static const String colStorySegments = 'storySegments';
-  static const String colUsers = 'users';
-  static const String colProgress = 'progress';
-  static const String colQuizResults = 'quizResults';
-  static const String colStats = 'stats';
+  // Supabase tables
+  static const String tblCategories = 'categories';
+  static const String tblPhrases = 'phrases';
+  static const String tblDecks = 'decks';
+  static const String tblVocabCards = 'vocab_cards';
+  static const String tblStories = 'stories';
+  static const String tblStorySegments = 'story_segments';
+  static const String tblUserProgress = 'user_progress';
+  static const String tblUserQuizResults = 'user_quiz_results';
+  static const String tblUserStats = 'user_stats';
+  static const String tblLeaderboard = 'leaderboard';
 
   // Achievement badge IDs
   static const String badge7DayStreak = 'streak_7';

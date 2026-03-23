@@ -42,7 +42,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     '- We do NOT sell your data to third parties\n'
                     '- We do NOT use your data for advertising purposes'),
             _section(theme, '3. Data Storage & Security',
-                '- Data is stored securely using Firebase (Google Cloud) infrastructure\n'
+                '- Data is stored securely using Supabase (PostgreSQL) with row-level security policies\n'
                     '- User data is access-controlled: only you can read/write your own progress\n'
                     '- Audio content and learning materials are stored in Firebase Storage with read-only public access\n'
                     '- Local data is stored in an SQLite database on your device'),
@@ -65,10 +65,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 'This app uses the following third-party services:\n'
                     '\n'
                     '- Firebase Authentication (account management)\n'
-                    '- Firebase Firestore (data storage)\n'
+                    '- Supabase (data storage — PostgreSQL hosted infrastructure)\n'
                     '- Firebase Analytics (anonymous usage statistics)\n'
+                    '- Firebase Storage (audio and image hosting)\n'
                     '\n'
-                    'These services are governed by Google\'s Privacy Policy.'),
+                    'These services are governed by Google\'s and Supabase\'s respective Privacy Policies.'),
             _section(theme, '8. Contact',
                 'For questions about this privacy policy or your data, please contact the Tugen App team.'),
             const SizedBox(height: 32),

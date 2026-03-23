@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:workmanager/workmanager.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:workmanager/workmanager.dart';
 
 import '../../firebase_options.dart';
 import '../database/app_database.dart';
@@ -16,9 +17,15 @@ void callbackDispatcher() {
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
+      await Supabase.initialize(
+        url: const String.fromEnvironment('SUPABASE_URL'),
+        anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+      );
+
       final user = FirebaseAuth.instance.currentUser;
       final db = AppDatabase();
-      final syncService = SyncService(db, user?.uid);
+      final supabase = Supabase.instance.client;
+      final syncService = SyncService(db, user?.uid, supabase);
 
       switch (taskName) {
         case 'syncUserProgress':
