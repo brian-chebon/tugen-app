@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 /// Stream of Firebase Auth state changes
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -43,6 +45,19 @@ class AuthService {
     );
     await credential.user?.updateDisplayName(displayName);
     return credential;
+  }
+
+  /// Sign in with Google
+  Future<UserCredential> signInWithGoogle() async {
+    if (kIsWeb) {
+      final provider = GoogleAuthProvider();
+      return await _auth.signInWithPopup(provider);
+    }
+    final googleSignIn = GoogleSignIn.instance;
+    final account = await googleSignIn.authenticate();
+    final idToken = account.authentication.idToken;
+    final credential = GoogleAuthProvider.credential(idToken: idToken);
+    return await _auth.signInWithCredential(credential);
   }
 
   /// Sign in anonymously (for try-before-signup)

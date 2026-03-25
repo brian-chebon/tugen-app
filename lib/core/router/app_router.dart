@@ -25,18 +25,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/phrasebook',
+    initialLocation: '/login',
     redirect: (context, state) {
-      final isLoggedIn = authState.value != null;
+      final user = authState.value;
+      final isLoggedIn = user != null && !user.isAnonymous;
       final isOnLogin = state.matchedLocation == '/login';
 
-      // Allow unauthenticated access to main features
-      // Only redirect to login for profile/settings
-      if (!isLoggedIn && state.matchedLocation.startsWith('/profile')) {
-        return '/login?redirect=${state.matchedLocation}';
-      }
+      // If logged in with a real account, redirect away from login
       if (isLoggedIn && isOnLogin) {
-        return state.uri.queryParameters['redirect'] ?? '/phrasebook';
+        return '/phrasebook';
+      }
+      // If not logged in (or anonymous), only allow the login page
+      if (!isLoggedIn && !isOnLogin) {
+        return '/login';
       }
       return null;
     },

@@ -85,6 +85,8 @@ class AppLocalizations {
       'signIn': 'Sign In',
       'signUp': 'Sign Up',
       'createAccount': 'Create Account',
+      'continueWithGoogle': 'Continue with Google',
+      'orContinueWithEmail': 'or continue with email',
       'continueAsGuest': 'Continue as Guest',
       'noAccount': "Don't have an account? Sign Up",
       'hasAccount': 'Already have an account? Sign In',
@@ -92,6 +94,8 @@ class AppLocalizations {
       'resetPasswordSent': 'Password reset email sent',
       'email': 'Email',
       'password': 'Password',
+      'confirmPassword': 'Confirm Password',
+      'passwordsDoNotMatch': 'Passwords do not match',
       'validEmail': 'Enter valid email',
       'minPassword': 'Min 6 characters',
       'learnTugen': 'Learn the Tugen Language',
@@ -210,6 +214,8 @@ class AppLocalizations {
       'signIn': 'Ingia',
       'signUp': 'Jisajili',
       'createAccount': 'Fungua Akaunti',
+      'continueWithGoogle': 'Endelea na Google',
+      'orContinueWithEmail': 'au endelea na barua pepe',
       'continueAsGuest': 'Endelea kama Mgeni',
       'noAccount': 'Huna akaunti? Jisajili',
       'hasAccount': 'Una akaunti tayari? Ingia',
@@ -217,6 +223,8 @@ class AppLocalizations {
       'resetPasswordSent': 'Barua pepe ya kubadili nenosiri imetumwa',
       'email': 'Barua pepe',
       'password': 'Nenosiri',
+      'confirmPassword': 'Thibitisha Nenosiri',
+      'passwordsDoNotMatch': 'Nenosiri hazifanani',
       'validEmail': 'Weka barua pepe sahihi',
       'minPassword': 'Herufi 6 au zaidi',
       'learnTugen': 'Jifunze Lugha ya Tugen',
@@ -335,6 +343,8 @@ class AppLocalizations {
       'signIn': 'Inweet',
       'signUp': 'Sigil',
       'createAccount': 'Yai akaunti',
+      'continueWithGoogle': 'Wendi ak Google',
+      'orContinueWithEmail': 'anan wendi ak barua pepe',
       'continueAsGuest': 'Wendi kou oriin',
       'noAccount': 'Ma mi akaunti? Sigil',
       'hasAccount': 'Mi akaunti? Inweet',
@@ -342,6 +352,8 @@ class AppLocalizations {
       'resetPasswordSent': 'Kiiyook barua pepe ne tep nenosiri',
       'email': 'Barua pepe',
       'password': 'Nenosiri',
+      'confirmPassword': 'Thibitisha Nenosiri',
+      'passwordsDoNotMatch': 'Nenosiri ma chaamei',
       'validEmail': 'Iit barua pepe ne kagai',
       'minPassword': 'Herufi 6 anan ichei',
       'learnTugen': 'Amesinei Kutit ne Tugen',
@@ -448,6 +460,8 @@ class AppLocalizations {
   String get signIn => translate('signIn');
   String get signUp => translate('signUp');
   String get createAccount => translate('createAccount');
+  String get continueWithGoogle => translate('continueWithGoogle');
+  String get orContinueWithEmail => translate('orContinueWithEmail');
   String get continueAsGuest => translate('continueAsGuest');
   String get noAccount => translate('noAccount');
   String get hasAccount => translate('hasAccount');
@@ -455,6 +469,8 @@ class AppLocalizations {
   String get resetPasswordSent => translate('resetPasswordSent');
   String get email => translate('email');
   String get password => translate('password');
+  String get confirmPassword => translate('confirmPassword');
+  String get passwordsDoNotMatch => translate('passwordsDoNotMatch');
   String get validEmail => translate('validEmail');
   String get minPassword => translate('minPassword');
   String get learnTugen => translate('learnTugen');
