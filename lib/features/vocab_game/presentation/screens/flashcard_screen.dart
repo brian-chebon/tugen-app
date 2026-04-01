@@ -174,6 +174,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                             onPressed: () => audioService.play(
                               card.audioPath ?? '',
                               remoteUrl: card.audioUrl,
+                              ttsText: card.tugen,
                             ),
                           ),
                           const SizedBox(height: 16),

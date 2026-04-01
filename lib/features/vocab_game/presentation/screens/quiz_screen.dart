@@ -313,6 +313,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                         onPressed: () => audioService.play(
                           question.card.audioPath ?? '',
                           remoteUrl: question.card.audioUrl,
+                          ttsText: question.card.tugen,
                         ),
                       ),
                     ],

@@ -23,6 +23,13 @@ final connectivityProvider = StreamProvider<List<ConnectivityResult>>((ref) {
   return Connectivity().onConnectivityChanged;
 });
 
+/// Triggers a one-time content pull on app startup.
+/// Watch this in your root widget to ensure content is synced.
+final initialSyncProvider = FutureProvider<void>((ref) async {
+  final sync = ref.read(syncServiceProvider);
+  await sync.pullContent();
+});
+
 class SyncService {
   final AppDatabase _db;
   final String? _userId;

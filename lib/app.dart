@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/l10n/app_localizations.dart';
 import 'core/router/app_router.dart';
+import 'core/sync/sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/presentation/providers/locale_provider.dart';
 
@@ -14,6 +15,9 @@ class TugenApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final locale = ref.watch(localeProvider);
+
+    // Trigger initial content sync from Supabase on app startup
+    ref.watch(initialSyncProvider);
 
     return MaterialApp.router(
       title: 'Tugen',

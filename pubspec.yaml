@@ -43,6 +43,7 @@ dependencies:
   just_audio_background: ^0.0.1-beta.15
   audio_session: ^0.2.3
   audio_waveforms: ^2.0.2
+  flutter_tts: ^4.2.0
 
   # --- Spaced Repetition ---
   fsrs: ^2.0.1
@@ -59,6 +60,9 @@ dependencies:
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
   google_fonts: ^8.0.2
+
+  # --- Web ---
+  web: ^1.1.0
 
   # --- Utilities ---
   path: ^1.9.0

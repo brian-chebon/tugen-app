@@ -91,6 +91,7 @@ class _PhraseDetailScreenState extends ConsumerState<PhraseDetailScreen> {
                           audioService.play(
                             phrase.audioPath ?? '',
                             remoteUrl: phrase.audioUrl,
+                            ttsText: phrase.tugen,
                           );
                         }
                       },

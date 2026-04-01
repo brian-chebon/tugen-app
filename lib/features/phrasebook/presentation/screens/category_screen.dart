@@ -46,6 +46,7 @@ class CategoryScreen extends ConsumerWidget {
                                 audioService.play(
                                   phrase.audioPath ?? '',
                                   remoteUrl: phrase.audioUrl,
+                                  ttsText: phrase.tugen,
                                 );
                               },
                             ),
